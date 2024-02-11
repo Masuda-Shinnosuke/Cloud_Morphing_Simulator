@@ -1,0 +1,20 @@
+apply plugin: 'java'
+apply plugin: 'application'
+mainClassName="CMorph.main"
+
+
+
+repositories { 
+    mavenCentral() 
+}
+
+jar {
+    archiveBaseName = 'gs-gradle'
+    archiveVersion =  '0.1.0'
+}
+
+dependencies {
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.2'
+}
+
