@@ -24,7 +24,7 @@ public class stayBuffer {
 
     public stayBuffer(){
         dataCenters = new dataCenter[config.NUM_OF_DATACENTER];
-        previousDatacenterLoad=new double[config.NUM_OF_DATACENTER];
+        previousDatacenterLoad = new double[config.NUM_OF_DATACENTER];
         dataCenterData= new ArrayList<>();
         objectMapper = new ObjectMapper();
     }
@@ -52,7 +52,7 @@ public class stayBuffer {
             }
         }
 
-        try (FileWriter fileWriter = new FileWriter("src/main/java/CMorph/output/serverdata.json", false)) {
+        try (FileWriter fileWriter = new FileWriter("src/main/java/CMorph/output/serverdata.json", true)) {
             objectMapper.writeValue(fileWriter, dataCenterData);
                 } catch(IOException e){
                     e.printStackTrace();
@@ -68,13 +68,12 @@ public class stayBuffer {
         int dataPlace = rand.nextInt(config.NUM_OF_DATACENTER);
         double simStep = t/config.simultionSteps;
         if (t>=0&&simStep<=0.4375){
-            userJobs job = new userJobs(150, 150, front, back, dataPlace);
-            userJobs.add(job);
+            // userJobs job = new userJobs(150, 150, front, back, dataPlace);
+            // userJobs.add(job);
         }else if(0.4375<simStep&&1<=simStep){
             dataCenters[userJobs.get(0).getCurrentDatacenter()].subJob();
         }
-
-        }
+    }
 
     public void changeDatacenter(int i,int t){
        userJobs.get(i).elpasedTime++;
@@ -83,16 +82,21 @@ public class stayBuffer {
        if(userJobs.get(i)!=null){
         double rate =userJobs.get(i).frontCommunication/userJobs.get(i).backendCommunication;
         for (int k=0;k<config.NUM_OF_DATACENTER;k++){
-            if (1<=rate&&rate<2){
-                bestDC=userJobs.get(i).dataObjectPlace;
-                break;
-            }else{
-                double cost = CMorph.AllocationServer.allocationServer.getCost(userJobs.get(i), dataCenters[k]);
-                if (cost<bestCost){
-                    bestCost=cost;
-                    bestDC=k;
-                }
+            double cost=CMorph.AllocationServer.allocationServer.getCost(userJobs.get(i),dataCenters[k].x,dataCenters[k].y,previousDatacenterLoad[k] );
+            if(cost<bestCost){
+                bestCost=cost;
+                bestDC=k;
             }
+            // if (rate>3){
+            //     bestDC=userJobs.get(i).dataObjectPlace;
+            //     break;
+            // }else{
+            //     double cost = CMorph.AllocationServer.allocationServer.getCost(userJobs.get(i),dataCenters[k].x,dataCenters[k].y,previousDatacenterLoad[k] );
+            //     if (cost<bestCost){
+            //         bestCost=cost;
+            //         bestDC=k;
+            //     }
+            // }
         }
         if (userJobs.get(i).currentDatacenter==-1) {
             userJobs.get(i).setCurrentDatacenter(bestDC);
