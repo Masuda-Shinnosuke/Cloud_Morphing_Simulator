@@ -50,6 +50,8 @@ public class stayBuffer {
                 dataCenterData.add(datacenterinfo);
                 previousDatacenterLoad[k]=dataCenters[k].getLoad();
             }
+
+           
         }
 
         try (FileWriter fileWriter = new FileWriter("src/main/java/CMorph/output/serverdata.json", true)) {

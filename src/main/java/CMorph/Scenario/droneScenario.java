@@ -31,86 +31,93 @@ public class droneScenario {
         
         // generate datacenters
         for (int i=0;i<config.NUM_OF_DATACENTER;i++){
-            dataCenters[i] = new dataCenter(config.DatacenterX[i], config.DatacenterY[i]);
+            // dataCenters[i] = new dataCenter(config.DatacenterX[i], config.DatacenterY[i]);
+            Random rand = new Random();
+            double dataCenterX=rand.nextInt(4000);
+            double dataCenterY=rand.nextInt(4000);
+            dataCenters[i] = new dataCenter(dataCenterX, dataCenterY);
         }
 
-         // generate jobs until simstep=0.4375 and remove jobs if job arrive simstep
-         for (int t = 0;t<config.simultionSteps;t++){
-            createDrone(t);
-            // ドローンの移動.仮に座標がシミュレーションのステップ数を超えたら削除
-            for(int i = 0;i<userJobs.size();i++){
-                userJobs.get(i).changeJobCoordinate(t);
+        // generate jobs until simPercent=0.4375
+        for (int t = 0;t<config.simultionSteps;t++){
+            double simPercent = t/config.simultionSteps;
+
+            if (t>7000){
+                System.out.println(t);
+            }
+
+            if (simPercent<=0.4375){
+                Random rand = new Random();
+                double front = rand.nextDouble(1.0);
+                double back = rand.nextDouble(1.0);
+                double jobX=rand.nextInt(100);
+                double jobY=rand.nextInt(100);
+                int dataPlace = rand.nextInt(config.NUM_OF_DATACENTER);
+                // generate jobs 
+                userJobs jobs = new userJobs(jobX, jobY, front, back, dataPlace, 10);
+                userJobs.add(jobs);
+            }else{
+                dataCenters[userJobs.get(0).getCurrentDatacenter()].subJob();
             }
             
-            // for (userJobs jobs:userJobs){
-            //     jobs.changeJobCoordinate(t);
-            //     if (jobs.y>=config.simultionSteps) {
-            //         userJobs.remove(jobs);
-            //     }
-            // }
             for (int i = 0;i<userJobs.size();i++){
-                changeDatacenter(i, t);
+                if (userJobs.get(i).getCurrentY()>=config.simultionSteps){
+                    userJobs.remove(i);
+                }
             }
+
+            // jobs change a dataCenter
+            for (int  j = 0;j<userJobs.size();j++){
+            
+                userJobs.get(j).changeJobCoordinate(t);
+
+                if(userJobs.get(j)!=null){
+                    double bestCost=Double.MAX_VALUE;
+                    Random rand =new Random();
+                    int num = rand.nextInt(100);
+
+                    int bestDC=-1;
+
+                    // An allocationServer caluculate cost for all dataCenters
+                    for (int k = 0;k<config.NUM_OF_DATACENTER;k++){
+                        double cost = CMorph.AllocationServer.allocationServer.getCost(userJobs.get(j),dataCenters[k].x,dataCenters[k].y,previousDatacenterLoad[k]);
+                        if (cost < bestCost){
+                            bestCost = cost;
+                            bestDC = k;
+                        }
+                    }
+
+                    // if jobs change dc firstTime
+                    if (userJobs.get(j).getCurrentDatacenter()==-1){
+                        userJobs.get(j).setCurrentDatacenter(bestDC);
+                        dataCenters[bestDC].addJob();
+                    }
+
+
+                    // if currentDC is not bestDC,job changes DC
+                    if(userJobs.get(j).getCurrentDatacenter()!=bestDC&&num>95){
+                        dataCenters[userJobs.get(j).currentDatacenter].subJob();
+                        userJobs.get(j).setCurrentDatacenter(bestDC);
+                        dataCenters[bestDC].addJob();
+                    }
+
+                }
+            }
+
             for (int k = 0;k<config.NUM_OF_DATACENTER;k++){
-                dataCenterInfo datacenterinfo = new dataCenterInfo(k, dataCenters[k].getLoad());
-                dataCenterData.add(datacenterinfo);
-                previousDatacenterLoad[k]=dataCenters[k].getLoad();
+                dataCenterInfo dataCenterInfo = new dataCenterInfo(k, dataCenters[k].getLoad());
+                dataCenterData.add(dataCenterInfo);
+                previousDatacenterLoad[k] = dataCenters[k].getLoad();
             }
+
         }
 
-        try (FileWriter fileWriter = new FileWriter("src/main/java/CMorph/output/serverdata.json", true)) {
+        try (FileWriter fileWriter = new FileWriter("/home/masuda/Doxuments/CMorph/output/serverdata.json", false)) {
             objectMapper.writeValue(fileWriter, dataCenterData);
                 } catch(IOException e){
                     e.printStackTrace();
                 }
 
-    }
-
-    public void createDrone(int t){
-        Random rand =new Random();
-        int front =rand.nextInt(500);
-        int back = rand.nextInt(500);
-        double DroneX=rand.nextInt(100);
-        double DroneY=rand.nextInt(100);
-        double initialSpeed=rand.nextInt(20);
-        int dataPlace = rand.nextInt(config.NUM_OF_DATACENTER);
-        double simStep = t/config.simultionSteps;
-
-        if(0<=t&&simStep<=0.4375){
-            userJobs job = new userJobs(DroneX,DroneY,front,back,dataPlace,initialSpeed);
-            userJobs.add(job);
-        }
-    }
-
-    public void changeDatacenter(int i,int t){
-        double bestCost=Double.MAX_VALUE;
-        int bestDC=-1;
-        
-        if(userJobs.get(i)!=null){
-            double rate = userJobs.get(i).frontCommunication/userJobs.get(i).backendCommunication;
-
-            for (int k = 0;k<config.NUM_OF_DATACENTER;k++){
-                double cost=CMorph.AllocationServer.allocationServer.getCost(userJobs.get(i),dataCenters[k].x,dataCenters[k].y,previousDatacenterLoad[k] );
-                if(cost<bestCost){
-                    bestCost=cost;
-                    bestDC=k;
-                }
-                // if(useMasuda){
-
-                // }
-
-                if(userJobs.get(i).currentDatacenter==-1){
-                    userJobs.get(i).setCurrentDatacenter(bestDC);
-                    dataCenters[bestDC].addJob();
-                }else{
-                    if(userJobs.get(i).getCurrentDatacenter()!=bestDC){
-                        dataCenters[userJobs.get(i).getCurrentDatacenter()].subJob();
-                        userJobs.get(i).setCurrentDatacenter(bestDC);
-                        dataCenters[bestDC].addJob();
-                    }
-                }
-            }
-        }
     }
 
 
