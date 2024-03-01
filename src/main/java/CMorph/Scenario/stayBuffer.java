@@ -46,7 +46,7 @@ public class stayBuffer {
             }
             
             for (int k = 0;k<config.NUM_OF_DATACENTER;k++){
-                dataCenterInfo datacenterinfo = new dataCenterInfo(k, dataCenters[k].getLoad());
+                dataCenterInfo datacenterinfo = new dataCenterInfo(k, dataCenters[k].getLoad(),dataCenters[k].x,dataCenters[k].y);
                 dataCenterData.add(datacenterinfo);
                 previousDatacenterLoad[k]=dataCenters[k].getLoad();
             }

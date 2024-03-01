@@ -11,19 +11,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import CMorph.Config.config;
 import CMorph.DataCenter.dataCenter;
 import CMorph.DataCenter.dataCenterInfo;
+import CMorph.DataCenter.dataCenterPosition;
+import CMorph.User.userJobInfo;
 import CMorph.User.userJobs;;
 
 public class droneScenario {
     private dataCenter [] dataCenters;
     private ArrayList <userJobs> userJobs=new ArrayList<>();
     private double [] previousDatacenterLoad;
-    private List<dataCenterInfo> dataCenterData; 
+    private List<dataCenterInfo> dataCenterData;
+    private List<dataCenterPosition> dataCenterPositions;
+    private List<userJobInfo> userJobsData;
     private ObjectMapper objectMapper;
 
     public droneScenario(){
         dataCenters = new dataCenter[config.NUM_OF_DATACENTER];
         previousDatacenterLoad=new double[config.NUM_OF_DATACENTER];
         dataCenterData= new ArrayList<>();
+        userJobsData = new ArrayList<>();
+        dataCenterPositions= new ArrayList<>();
         objectMapper = new ObjectMapper();
     }
 
@@ -36,6 +42,8 @@ public class droneScenario {
             double dataCenterX=rand.nextInt(4000);
             double dataCenterY=rand.nextInt(4000);
             dataCenters[i] = new dataCenter(dataCenterX, dataCenterY);
+            dataCenterPosition dataCenterPosition = new dataCenterPosition(i, dataCenterX, dataCenterY);
+            dataCenterPositions.add(dataCenterPosition);
         }
 
         // generate jobs until simPercent=0.4375
@@ -100,19 +108,38 @@ public class droneScenario {
                         userJobs.get(j).setCurrentDatacenter(bestDC);
                         dataCenters[bestDC].addJob();
                     }
+                    if (userJobs.get(j).getCurrentDatacenter()!=-1){
+                        userJobInfo jobInfo = new userJobInfo(j, userJobs.get(j).x, userJobs.get(j).y, userJobs.get(j).getCurrentDatacenter());
+                        userJobsData.add(jobInfo);
+                    }
 
                 }
             }
 
             for (int k = 0;k<config.NUM_OF_DATACENTER;k++){
-                dataCenterInfo dataCenterInfo = new dataCenterInfo(k, dataCenters[k].getLoad());
+                dataCenterInfo dataCenterInfo = new dataCenterInfo(k, dataCenters[k].getLoad(),dataCenters[k].x,dataCenters[k].y);
                 dataCenterData.add(dataCenterInfo);
                 previousDatacenterLoad[k] = dataCenters[k].getLoad();
             }
 
         }
 
-        try (FileWriter fileWriter = new FileWriter("/home/masuda/Doxuments/CMorph/output/serverdata.json", false)) {
+        try (FileWriter fileWriter = new FileWriter("/home/masuda/Cloud_Morphing_Simulator/src/main/java/CMorph/output/position_data", false)) {
+            objectMapper.writeValue(fileWriter, dataCenterPositions);
+                } catch(IOException e){
+                    e.printStackTrace();
+                }
+
+
+
+        try (FileWriter fileWriter = new FileWriter("/home/masuda/Cloud_Morphing_Simulator/src/main/java/CMorph/output/userJob_data", false)) {
+            objectMapper.writeValue(fileWriter, userJobsData);
+                } catch(IOException e){
+                    e.printStackTrace();
+                }
+        
+
+        try (FileWriter fileWriter = new FileWriter("/home/masuda/Cloud_Morphing_Simulator/src/main/java/CMorph/output/datacenter_data", false)) {
             objectMapper.writeValue(fileWriter, dataCenterData);
                 } catch(IOException e){
                     e.printStackTrace();
